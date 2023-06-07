@@ -1,6 +1,8 @@
 import { Request, Response } from "express"
 import { CourseBusiness } from "../business/CourseBusiness"
 import { BaseError } from "../errors/BaseError"
+import { createCourseSchema } from "../dtos/createCourse.dto"
+import { ZodError } from "zod"
 
 export class CourseController {
   public getCourses = async (req: Request, res: Response) => {
@@ -27,11 +29,11 @@ export class CourseController {
   public createCourse = async (req: Request, res: Response) => {
     try {
 
-      const input = {
+      const input = createCourseSchema.parse({
         id: req.body.id,
         name: req.body.name,
         lessons: req.body.lessons
-      }
+      })
 
       const courseBusiness = new CourseBusiness()
       const output = await courseBusiness.createCourse(input)
@@ -39,6 +41,10 @@ export class CourseController {
       res.status(201).send(output)
     } catch (error) {
       console.log(error)
+
+      if(error instanceof ZodError){
+        res.status(400).send(error.issues)
+      }
 
       if (error instanceof BaseError) {
         res.status(error.statusCode).send(error.message)
